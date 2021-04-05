@@ -9,7 +9,7 @@ app.get('/api/city/:city', async (req, res) => {
   
   let response = await fetch(`https://www.metaweather.com/api/location/search/?query=${city}`);
   let data = await response.json();
-  res.json(data[0].latt_long);
+  !data[0] ? res.json(0) : res.json(data[0].latt_long);
   // .catch(err => console.log(err))
 });
 
@@ -24,7 +24,7 @@ app.get('/api/lattlong/:latt_long', async (req, res) => {
   let response2 = await fetch(`https://www.metaweather.com/api/location/${dataset.city.woeid}`);
   let data2 = await response2.json();
   dataset.weather = data2.consolidated_weather[0];
-  res.json(dataset)
+  res.json(dataset);
   // .catch(err => console.log(err))
 });
 

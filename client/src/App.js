@@ -14,7 +14,9 @@ class App extends Component {
       newLocationValue: "",
       locations: defaultLocations,
       city: "",
-      weather: ""
+      weather: "",
+      displayCityError: false,
+      displayCityAdded: false
     };
     this.handleLocationChange = this.changeLattlong.bind(this);
     this.handleLocationSubmit = this.submitLattlong.bind(this);
@@ -26,25 +28,36 @@ class App extends Component {
     this.setState({newLocationValue: event.target.value});
   }
   /* changeLattlong(event) to fetch "lattlong" of the new location (city) and adds it to the "locations" array */
-  submitLattlong(event) {
+  /* If city is found it is added to the locations list and a success message is shown, If not found it shouws a fail message. */
+  async submitLattlong(event) {
     let updateLattlongs = this.state.locations;
     event.preventDefault();
-    fetch(`/api/city/${this.state.newLocationValue}`)
-    .then(res => res.json())
-    .then(dataset => updateLattlongs.push(dataset))
-    .then(() => this.setState({locations: updateLattlongs}))
-    .then(() => this.setState({newLocationValue: ""}))
+    let response = await fetch(`/api/city/${this.state.newLocationValue}`);
+    let dataset = await response.json();
+    if (dataset === 0) {
+      this.setState({displayCityError: true});
+    } else {
+      updateLattlongs.push(dataset);
+      this.setState({locations: updateLattlongs});
+      this.setState({displayCityError: false});
+      this.setState({displayCityAdded: true});
+    }
+    this.setState({newLocationValue: ""});
+    setTimeout(() => {
+      this.setState({displayCityAdded: false});
+      this.setState({displayCityError: false});
+    }, 2000);
   }
 
   /* Repeatedly fetch city and weather information from API through Express server */
   /* Uses "lattlong" as input */
   fetchLattLong = (index) => {
-    setInterval(() =>  {
-      fetch(`/api/lattlong/${this.state.locations[index]}`)
-      .then(res => res.json())
-      .then((dataset) => this.setState(dataset))
-      .then(() => this.setState({loading: false}))
-      .then(() => (index === this.state.locations.length - 1) ? index = 0 : index++)
+    setInterval(async () =>  {
+      let response = await fetch(`/api/lattlong/${this.state.locations[index]}`);
+      let dataset = await response.json();
+      this.setState(dataset);
+      this.setState({loading: false});
+      (index === this.state.locations.length - 1) ? index = 0 : index++;
     }, 5000);
   }
 
@@ -70,6 +83,12 @@ class App extends Component {
             <div className="col-sm-12 col-lg-6">
               <Card props={this.state} />
               <AddCityForm newLocationValue={this.state.newLocationValue} onSubmit={this.handleLocationSubmit} onChange={this.handleLocationChange} />
+              <div className={(this.state.displayCityError ? "d-block" : "d-none")}>
+                <p className="text-center">City not found</p>
+              </div>
+              <div className={(this.state.displayCityAdded ? "d-block" : "d-none")}>
+                <p className="text-center">City added</p>
+              </div>
             </div>
             <div className="col">
             </div>
